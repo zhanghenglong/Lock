@@ -271,6 +271,18 @@ public class AddProActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    public void onBackPressed() {
+        //  super.onBackPressed();
+        if (state == FP_State.RECIEVED_DATA) {
+            Toast.makeText(getApplicationContext(), "已收到指纹数据，请输入指纹主人的名字！", Toast.LENGTH_SHORT).show();
+        } else {
+            Intent tent = new Intent(AddProActivity.this, HomeActivity.class);
+            setResult(RESULT_CANCELED, tent);
+            AddProActivity.this.finish();
+        }
+    }
+
     /**==============================================================================**
      * 函数名：scanDevice
      * 函数功能：搜索周围蓝牙设备

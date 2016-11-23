@@ -72,6 +72,14 @@ public class DelProActivity extends ListActivity {
         super.onDestroy();
     }
 
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        Intent returnIntent = new Intent();
+        setResult(RESULT_CANCELED, returnIntent);
+        DelProActivity.this.finish();
+    }
+
     /**==============================================================================**
      * 类名：ViewHolder
      * 类功能：ViewHolder

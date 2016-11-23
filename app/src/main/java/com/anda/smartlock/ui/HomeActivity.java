@@ -52,7 +52,7 @@ public class HomeActivity extends AppCompatActivity{
     private static final String TAG = HomeActivity.class.getSimpleName();
     private static final int REQUEST_ENABLE_BT = 2;
     // Stops scanning after 5 seconds.
-    private static final long SCAN_PERIOD = 3000;
+    private static final long SCAN_PERIOD = 2000;
     private static final long CONN_PERIOD = 5000;
     private static final long INMODE_PERIOD = 5000;
     private static short seq = 1;
@@ -154,6 +154,8 @@ public class HomeActivity extends AppCompatActivity{
         }
     };
     private BluetoothGattCharacteristic mNotifyCharacteristic;
+    private boolean mWaitingAdd = false;
+    private boolean mWaitingDel = false;
     //Parameter:===================== Handles various events fired by the Service.=====================//
     private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
         @Override
@@ -182,12 +184,11 @@ public class HomeActivity extends AppCompatActivity{
                 if(data == null)
                     Log.d(TAG, "ACTION_DATA_AVAILABLE的广播数据返回的为空值，请检查回调函数是否有数据返回");
                 Log.d(TAG, "指纹流程已经收到数据：" + new String(data));
+                //处理收到的数据
                 handleMsg(data);
             }
         }
     };
-    private boolean mWaitingAdd = true;
-    private boolean mWaitingDel = true;
     //Parameter:======================= Device switch list. =======================//
     private List btnList = new ArrayList<Switch>();
     //Parameter:======================= Device scan callback. =======================//
@@ -255,11 +256,13 @@ public class HomeActivity extends AppCompatActivity{
             public void onClick(View v) {
 
                 sendMsg2Lock(Lock.CmdId.sendAddNotificationToLock, null, seq++);
+                mWaitingAdd = true;
                 pDialog = showProcessDialog("开启录指纹模式...");
                 mHandler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
                         pDialog.dismissWithAnimation();
+                        mWaitingAdd = false;
                         if (state == FP_State.IDLE)
                             Toast.makeText(HomeActivity.this, "设备开启录指纹模式失败，请检查设备！", Toast.LENGTH_SHORT).show();
                     }
@@ -269,14 +272,14 @@ public class HomeActivity extends AppCompatActivity{
         findViewById(R.id.btn_del).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Intent intent1 = new Intent(HomeActivity.this, DelProActivity.class);
-              //  startActivityForResult(intent1, 1);
                 sendMsg2Lock(Lock.CmdId.sendDelNotificationToLock, null, seq++);
+                mWaitingDel = true;
                 pDialog = showProcessDialog("开启删指纹模式...");
                 mHandler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
                         pDialog.dismissWithAnimation();
+                        mWaitingDel = false;
                         if (state == FP_State.IDLE)
                             Toast.makeText(HomeActivity.this, "设备开启删指纹模式失败，请检查设备！", Toast.LENGTH_SHORT).show();
                     }
@@ -378,7 +381,7 @@ public class HomeActivity extends AppCompatActivity{
             finish();
             return;
         }
-        if (requestCode == 0 && resultCode == Activity.RESULT_CANCELED)
+        if ((requestCode == 0 || requestCode == 1) && resultCode == Activity.RESULT_CANCELED)
             state = FP_State.IDLE;
         if(requestCode == 0 && resultCode == Activity.RESULT_OK){
             state = FP_State.IDLE;
@@ -386,12 +389,21 @@ public class HomeActivity extends AppCompatActivity{
             Toast.makeText(this, data.getStringExtra(AddProActivity.EXTRAS_FingerPrint_NAME) + "的指纹录取成功！", Toast.LENGTH_SHORT).show();
         }
         if(requestCode == 1 && resultCode == Activity.RESULT_OK){
+            state = FP_State.DEL;
             selected_id = data.getStringExtra(DelProActivity.EXTRAS_FingerPrint_ID);
             System.out.println(selected_id + "已被选择要删除！");
             new SweetAlertDialog(this, SweetAlertDialog.WARNING_TYPE)
                     .setTitleText("确定要删除吗?")
                     .setContentText("将要从设备和数据库中删除指纹")
-                    .setConfirmText("是的，删除！")
+                    .setConfirmText("删除")
+                    .setCancelText("返回")
+                    .setCancelClickListener(new SweetAlertDialog.OnSweetClickListener() {
+                        @Override
+                        public void onClick(SweetAlertDialog sweetAlertDialog) {
+                            state = FP_State.IDLE;
+                            sweetAlertDialog.dismissWithAnimation();
+                        }
+                    })
                     .setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
                         @Override
                         public void onClick(SweetAlertDialog sDialog) {
@@ -401,12 +413,7 @@ public class HomeActivity extends AppCompatActivity{
                             FingerPrint fingerPrint = fp_repo.getFingerPrintById(id);
                             System.out.println("要删除的指纹地址是：" + fingerPrint.address.toString());
                             sendMsg2Lock(Lock.CmdId.sendDataToLock, fingerPrint.address, seq++);
-
-                            sDialog.getProgressHelper().setBarColor(Color.parseColor("#A5DC86"));
-                            sDialog.setTitleText("通知设备删除...");
-                            sDialog.setConfirmText("");
-                            sDialog.showContentText(false);
-                            pDialog = sDialog;
+                            sDialog.dismissWithAnimation();
                         }
                     }).show();
         }
@@ -480,7 +487,8 @@ public class HomeActivity extends AppCompatActivity{
         Lock.Head packetHead = msg.head;
         switch (state) {
             case FP_State.IDLE:
-                if(packetHead.cmdId == 0x1003) {
+                if (packetHead.cmdId == 0x1003 && mWaitingAdd) {
+                    mWaitingAdd = false;
                     if (packetHead.errorCode == 0) {
                         state = FP_State.ADD;
                         pDialog.dismissWithAnimation();
@@ -492,7 +500,8 @@ public class HomeActivity extends AppCompatActivity{
                         System.out.println("智能锁开始录指纹模式失败，请检查指纹模块是否就绪！");
                         Toast.makeText(HomeActivity.this, "智能锁无法进入录指纹模式，请检查锁的状态", Toast.LENGTH_SHORT).show();
                     }
-                } else if (packetHead.cmdId == 0x1004) {
+                } else if (packetHead.cmdId == 0x1004 && mWaitingDel) {
+                    mWaitingDel = false;
                     if (packetHead.errorCode == 0) {
                         state = FP_State.DEL;
                         System.out.println("智能锁已经进入删指纹模式");
@@ -500,23 +509,25 @@ public class HomeActivity extends AppCompatActivity{
                         Intent intent1 = new Intent(HomeActivity.this, DelProActivity.class);
                         startActivityForResult(intent1, 1);
                     } else {
+                        Toast.makeText(this, "智能锁开始录指纹模式失败，请检查设备是否就绪！", Toast.LENGTH_SHORT);
                         System.out.println("智能锁开始录指纹模式失败，请检查设备是否就绪！" + packetHead.errorCode);
                     }
                 }
                 break;
             case FP_State.DEL:
-                if (packetHead.cmdId == 0x1001) {
+                if (packetHead.cmdId == 0x1002) {
                     if (packetHead.errorCode == 0) {
                         state = FP_State.IDLE;
                         System.out.println("删除指纹成功");
                         FingerPrintRepo fp_repo = new FingerPrintRepo(this);
                         fp_repo.delete(Integer.valueOf(selected_id));
-                        pDialog
+                        new SweetAlertDialog(this, SweetAlertDialog.SUCCESS_TYPE)
                                 .setTitleText("已删除!")
-                                .setContentText("指纹数据已从设备和数据库中删除!")
+                                .setContentText("指纹已从设备和数据库中删除!")
                                 .setConfirmText("好的")
-                                .setConfirmClickListener(null)
-                                .changeAlertType(SweetAlertDialog.SUCCESS_TYPE);
+                                .setConfirmClickListener(null).show();
+                    } else {
+                        Toast.makeText(this, "设备删除指纹失败！", Toast.LENGTH_SHORT);
                     }
                 }
                 break;

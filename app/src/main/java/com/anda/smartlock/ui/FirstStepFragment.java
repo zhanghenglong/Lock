@@ -14,10 +14,10 @@ import com.anda.smartlock.R;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class SecondFragment extends Fragment {
+public class FirstStepFragment extends Fragment {
     private TextView txt_fir;
 
-    public SecondFragment() {
+    public FirstStepFragment() {
         // Required empty public constructor
     }
 

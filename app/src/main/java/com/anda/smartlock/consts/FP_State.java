@@ -9,6 +9,6 @@ public class FP_State {
     public final static int FIRSTSTEP= 1;
     public final static int SECSTEP= 2;
     public final static int RECIEVED_DATA= 3;
-    public final static int NAMED= 4;
+    public final static int ADD = 4;
     public final static int DEL= 5;
 }

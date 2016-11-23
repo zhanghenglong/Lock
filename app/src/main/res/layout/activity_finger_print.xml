@@ -4,31 +4,31 @@
     android:id="@+id/activity_finger_print"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.anda.smartlock.ui.FingerPrintActivity">
+    tools:context="com.anda.smartlock.ui.DelProActivity">
 
     <ListView
+        android:id="@android:id/list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="91dp"
-        android:id="@android:id/list" />
+        android:layout_marginBottom="91dp" />
 
     <Button
-        android:text="Button"
+        android:id="@+id/btn_add"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_alignParentEnd="true"
         android:layout_marginEnd="56dp"
-        android:id="@+id/btn_add" />
+        android:text="Button" />
 
     <Button
-        android:text="Button"
+        android:id="@+id/btn_loaditem"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="59dp"
-        android:id="@+id/btn_loaditem"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentStart="true" />
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="59dp"
+        android:text="Button" />
 </RelativeLayout>

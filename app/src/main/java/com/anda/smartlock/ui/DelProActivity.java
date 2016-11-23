@@ -1,7 +1,6 @@
 package com.anda.smartlock.ui;
 
 import android.app.ListActivity;
-import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -9,31 +8,25 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
-import android.widget.Button;
-import android.widget.ListAdapter;
 import android.widget.ListView;
-import android.widget.SimpleAdapter;
-import android.widget.Switch;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.anda.smartlock.R;
-import com.anda.smartlock.data.FingerPrint;
 import com.anda.smartlock.data.FingerPrintRepo;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class FingerPrintActivity extends ListActivity{
-    private static final String TAG = FingerPrintActivity.class.getSimpleName();
+public class DelProActivity extends ListActivity {
     public static final String EXTRAS_FingerPrint_ID = "ID";
-
+    private static final String TAG = DelProActivity.class.getSimpleName();
     private ArrayList<HashMap<String, String>> mList;
     private ArrayList<FPBean> fpBeanArrayList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setFinishOnTouchOutside(false);
         FingerPrintRepo fp_repo = new FingerPrintRepo(this);
         fpBeanArrayList = new ArrayList<FPBean>();
         mList = fp_repo.getFingerPrintList();
@@ -53,7 +46,7 @@ public class FingerPrintActivity extends ListActivity{
                 Intent returnIntent = new Intent();
                 returnIntent.putExtra(EXTRAS_FingerPrint_ID, selected_id);
                 setResult(RESULT_OK, returnIntent);
-                FingerPrintActivity.this.finish();
+                DelProActivity.this.finish();
             }
         });
     }
@@ -80,6 +73,16 @@ public class FingerPrintActivity extends ListActivity{
     }
 
     /**==============================================================================**
+     * 类名：ViewHolder
+     * 类功能：ViewHolder
+     * 范围：static inner类
+     **==============================================================================**/
+    static class ViewHolder {
+        TextView id;
+        TextView name;
+    }
+
+    /**==============================================================================**
      * 类名：LeDeviceListAdapter
      * 类功能：Adapter for holding devices found through scanning.
      * 范围：inner类
@@ -91,7 +94,7 @@ public class FingerPrintActivity extends ListActivity{
         public FingerPrintListAdapter(ArrayList<FPBean> mList) {
             super();
             mFPList = mList;
-            mInflator = FingerPrintActivity.this.getLayoutInflater();
+            mInflator = DelProActivity.this.getLayoutInflater();
         }
 
         public void clear() {
@@ -111,31 +114,22 @@ public class FingerPrintActivity extends ListActivity{
         }
         @Override
         public View getView(int i, View view, ViewGroup viewGroup) {
-            FingerPrintActivity.ViewHolder viewHolder;
+            DelProActivity.ViewHolder viewHolder;
             // General ListView optimization code.
             if (view == null) {
                 view = mInflator.inflate(R.layout.layout_item_fingerprint, null);
-                viewHolder = new FingerPrintActivity.ViewHolder();
+                viewHolder = new DelProActivity.ViewHolder();
                 viewHolder.id = (TextView) view.findViewById(R.id.fp_id);
                 viewHolder.name = (TextView) view.findViewById(R.id.name);
                 view.setTag(viewHolder);
             } else {
-                viewHolder = (FingerPrintActivity.ViewHolder) view.getTag();
+                viewHolder = (DelProActivity.ViewHolder) view.getTag();
             }
             FPBean fingerPrint = mFPList.get(i);
             viewHolder.id.setText(fingerPrint.getId());
             viewHolder.name.setText(fingerPrint.getName());
             return view;
         }
-    }
-    /**==============================================================================**
-     * 类名：ViewHolder
-     * 类功能：ViewHolder
-     * 范围：static inner类
-     **==============================================================================**/
-    static class ViewHolder {
-        TextView id;
-        TextView name;
     }
 
     class FPBean {

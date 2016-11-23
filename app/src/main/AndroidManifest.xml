@@ -14,8 +14,8 @@
         android:icon="@mipmap/logo1"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        tools:node="replace"
-        android:theme="@style/AppTheme">
+        android:theme="@style/AppTheme"
+        tools:node="replace">
         <activity
             android:name=".ui.HomeActivity"
             android:launchMode="singleInstance">
@@ -25,11 +25,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".ui.FingerPrintActivity"
-            android:theme="@android:style/Theme.Holo.Light.Dialog"
+        <activity
+            android:name=".ui.DelProActivity"
+            android:label="选择要删除的指纹"
             android:noHistory="true"
-            android:label="选择要删除的指纹"/>
-        <activity android:name=".ui.AddingProActivity" />
+            android:theme="@android:style/Theme.Holo.Light.Dialog" />
+        <activity android:name=".ui.AddProActivity" />
 
         <service
             android:name=".ui.BluetoothLeService"

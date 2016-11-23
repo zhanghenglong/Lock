@@ -10,51 +10,45 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import com.anda.smartlock.R;
 import com.anda.smartlock.consts.BLEUUID;
 import com.anda.smartlock.consts.FP_State;
 import com.anda.smartlock.data.FingerPrint;
 import com.anda.smartlock.data.FingerPrintRepo;
 import com.anda.smartlock.protocol.Lock;
-import com.iiseeuu.rootview.RootLayout;
 
 import java.util.ArrayList;
 import java.util.UUID;
+
 import me.drozdzynski.library.steppers.OnCancelAction;
 import me.drozdzynski.library.steppers.OnFinishAction;
 import me.drozdzynski.library.steppers.SteppersItem;
 import me.drozdzynski.library.steppers.SteppersView;
 /**==============================================================================**
- * 类名：AddingProActivity
+ * 类名：AddProActivity
  * 类功能：实现指纹录流程activity
  * 范围：public类
  **==============================================================================**/
-public class AddingProActivity extends AppCompatActivity {
-    private static final String TAG = AddingProActivity.class.getSimpleName();
-
+public class AddProActivity extends AppCompatActivity {
     public static final String EXTRAS_DEVICE_NAME = "DEVICE_NAME";
     public static final String EXTRAS_DEVICE_ADDRESS = "DEVICE_ADDRESS";
     public static final String EXTRAS_FingerPrint_NAME = "NAME";
+    private static final String TAG = AddProActivity.class.getSimpleName();
+    private static short seq = 1;
+    FingerPrint fingerPrint = new FingerPrint();
+    FingerPrintRepo fp_repo = new FingerPrintRepo(this);
     private BluetoothLeService mBluetoothLeService;
     private BluetoothGattService mBluetoothLeGattaService;
     private boolean mConnected = false;
     private BluetoothGattCharacteristic mNotifyCharacteristic;
     private String mDeviceAddress;
-
-    private int state = FP_State.FIRSTSTEP;
-    private static short seq = 1;
-    FingerPrint fingerPrint = new FingerPrint();
-    FingerPrintRepo fp_repo = new FingerPrintRepo(this);
-
-    private ArrayList<SteppersItem> steps;
     //Parameter:======================= Code to manage Service lifecycle.=======================//
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
         @Override
@@ -77,6 +71,8 @@ public class AddingProActivity extends AppCompatActivity {
             mBluetoothLeService = null;
         }
     };
+    private int state = FP_State.FIRSTSTEP;
+    private ArrayList<SteppersItem> steps;
     //Parameter:===================== Handles various events fired by the Service.=====================//
     private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
         @Override
@@ -85,7 +81,7 @@ public class AddingProActivity extends AppCompatActivity {
             if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(action)) {
                 mConnected = true;
              //   updateConnectionState(R.string.connected);
-                invalidateOptionsMenu();
+                //   invalidateOptionsMenu();
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 mConnected = false;
               //  updateConnectionState(R.string.disconnected);
@@ -104,6 +100,24 @@ public class AddingProActivity extends AppCompatActivity {
             }
         }
     };
+
+    /**==============================================================================**
+     * 函数名：makeGattUpdateIntentFilter
+     * 函数功能：确定过滤service回调的事件
+     * 全局变量：
+     * 输入参数：null
+     * 返回值：IntentFilter
+     **==============================================================================**/
+    private static IntentFilter makeGattUpdateIntentFilter() {
+        final IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
+        intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED);
+        intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED);
+        intentFilter.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED);
+        intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
+        return intentFilter;
+    }
+
     /**==============================================================================**
      * 函数名：onCreate
      * 函数功能：activity的onCreat流程
@@ -139,10 +153,10 @@ public class AddingProActivity extends AppCompatActivity {
                         Toast.makeText(getApplicationContext(), "数据存储失败，请重试！", Toast.LENGTH_SHORT).show();
                     else {
                         Log.d(TAG, "指纹地址数据存储成功！");
-                        Intent tent = new Intent(AddingProActivity.this, HomeActivity.class);
+                        Intent tent = new Intent(AddProActivity.this, HomeActivity.class);
                         tent.putExtra(EXTRAS_FingerPrint_NAME, name);
                         setResult(RESULT_OK, tent);
-                        AddingProActivity.this.finish();
+                        AddProActivity.this.finish();
                     }
                 }
             }
@@ -150,8 +164,13 @@ public class AddingProActivity extends AppCompatActivity {
         steppersViewConfig.setOnCancelAction(new OnCancelAction() {
             @Override
             public void onCancel() {
-                AddingProActivity.this.startActivity(new Intent(AddingProActivity.this, HomeActivity.class));
-                AddingProActivity.this.finish();
+                if (state == FP_State.RECIEVED_DATA) {
+                    Toast.makeText(getApplicationContext(), "已收到指纹数据，请输入指纹主人的名字！", Toast.LENGTH_SHORT).show();
+                } else {
+                    Intent tent = new Intent(AddProActivity.this, HomeActivity.class);
+                    setResult(RESULT_CANCELED, tent);
+                    AddProActivity.this.finish();
+                }
             }
         });
         steppersViewConfig.setFragmentManager(getSupportFragmentManager());
@@ -162,13 +181,13 @@ public class AddingProActivity extends AppCompatActivity {
             item.setLabel("指纹录入步骤:(" + (i+1) +"/2)");
             item.setPositiveButtonEnable(false);
             if(i == 0) {
-                SecondFragment secondFragment = new SecondFragment();
+                FirstStepFragment firstStepFragment = new FirstStepFragment();
                 item.setSubLabel("");
-                item.setFragment(secondFragment);
+                item.setFragment(firstStepFragment);
             } else if(i == 1) {
-                ThirdFragment thirdFragment = new ThirdFragment();
+                SecStepFragment secStepFragment = new SecStepFragment();
                 item.setSubLabel("");
-                item.setFragment(thirdFragment);
+                item.setFragment(secStepFragment);
             }
             steps.add(item);
             i++;
@@ -178,6 +197,7 @@ public class AddingProActivity extends AppCompatActivity {
         steppersView.setItems(steps);
         steppersView.build();
     }
+
     /**==============================================================================**
      * 函数名：onResume
      * 函数功能：activity的onResume流程
@@ -194,6 +214,7 @@ public class AddingProActivity extends AppCompatActivity {
             Log.d(TAG, "Connect request result=" + result);
         }
     }
+
     /**==============================================================================**
      * 函数名：onPause
      * 函数功能：activity的onResume流程
@@ -206,6 +227,7 @@ public class AddingProActivity extends AppCompatActivity {
         super.onPause();
         unregisterReceiver(mGattUpdateReceiver);
     }
+
     /**==============================================================================**
      * 函数名：onDestroy
      * 函数功能：activity的onDestroy流程
@@ -217,6 +239,7 @@ public class AddingProActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
     }
+
     /**==============================================================================**
      * 函数名：onStop
      * 函数功能：activity的onStop流程
@@ -230,6 +253,7 @@ public class AddingProActivity extends AppCompatActivity {
         unbindService(mServiceConnection);
         mBluetoothLeService = null;
     }
+
     /**==============================================================================**
      * 函数名：onStart
      * 函数功能：activity的onStart流程
@@ -246,22 +270,7 @@ public class AddingProActivity extends AppCompatActivity {
             Log.d(TAG, "Connect request result=" + result);
         }
     }
-    /**==============================================================================**
-     * 函数名：makeGattUpdateIntentFilter
-     * 函数功能：确定过滤service回调的事件
-     * 全局变量：
-     * 输入参数：null
-     * 返回值：IntentFilter
-     **==============================================================================**/
-    private static IntentFilter makeGattUpdateIntentFilter() {
-        final IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
-        intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED);
-        intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED);
-        intentFilter.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED);
-        intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
-        return intentFilter;
-    }
+
     /**==============================================================================**
      * 函数名：scanDevice
      * 函数功能：搜索周围蓝牙设备
@@ -302,7 +311,7 @@ public class AddingProActivity extends AppCompatActivity {
                         steps.get(0).setPositiveButtonEnable(true);
                     } else {
                         state = FP_State.IDLE;
-                        Toast.makeText(AddingProActivity.this, "指纹录取失败，请点击取消退出", Toast.LENGTH_SHORT);
+                        Toast.makeText(AddProActivity.this, "指纹录取失败，请点击取消退出", Toast.LENGTH_SHORT);
                         System.out.println("智能锁录取指纹失败！失败代码为：" + packetHead.errorCode);
                     }
                 }
@@ -316,7 +325,7 @@ public class AddingProActivity extends AppCompatActivity {
                         /// 这里将来考虑提示两次成功后启动timer定时器，如果在超时还没有收到指纹地址的话就给设备和微信提示
                     } else {
                         state = FP_State.IDLE;
-                        Toast.makeText(AddingProActivity.this, "指纹录取失败，请点击取消退出", Toast.LENGTH_SHORT);
+                        Toast.makeText(AddProActivity.this, "指纹录取失败，请点击取消退出", Toast.LENGTH_SHORT);
                         System.out.println("智能锁录取指纹失败！失败代码为：" + packetHead.errorCode);
                     }
                 }
@@ -337,8 +346,6 @@ public class AddingProActivity extends AppCompatActivity {
                     fingerPrint.address = packetBody;
                     steps.get(1).setPositiveButtonEnable(true);
                 }
-                break;
-            case FP_State.DEL:
                 break;
         }
     }

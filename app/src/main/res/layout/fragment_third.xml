@@ -1,15 +1,14 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="200dp"
-    tools:context="com.anda.smartlock.ui.ThirdFragment">
+    android:orientation="vertical"
+    tools:context="com.anda.smartlock.ui.SecStepFragment">
 
     <TextView
+        android:id="@+id/txt_sec"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/txt_sec"
         android:text="请再次将指纹放置到指纹识别模块中" />
 
     <Space
@@ -18,11 +17,11 @@
         android:minHeight="15dp" />
 
     <EditText
+        android:id="@+id/txt_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:inputType="textPersonName"
         android:ems="10"
-        android:id="@+id/txt_name"
+        android:inputType="textPersonName"
         android:visibility="invisible" />
 
 </LinearLayout>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/rootview/rootview.iml" filepath="$PROJECT_DIR$/rootview/rootview.iml" />
+      <module fileurl="file://$PROJECT_DIR$/smartLock.iml" filepath="$PROJECT_DIR$/smartLock.iml" />
+      <module fileurl="file://$PROJECT_DIR$/steppers/steppers.iml" filepath="$PROJECT_DIR$/steppers/steppers.iml" />
+    </modules>
+  </component>
+</project>

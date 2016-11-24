@@ -32,7 +32,7 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
-import com.anda.smartlock.bluetooth.Conversion;
+import com.anda.smartlock.tools.LogWriter;
 
 import java.util.List;
 import java.util.UUID;
@@ -42,8 +42,6 @@ import java.util.UUID;
  * given Bluetooth LE device.
  */
 public class BluetoothLeService extends Service {
-    private final static String TAG = BluetoothLeService.class.getSimpleName();
-
     public final static String ACTION_GATT_CONNECTED =
             "com.example.bluetooth.le.ACTION_GATT_CONNECTED";
     public final static String ACTION_GATT_DISCONNECTED =
@@ -54,7 +52,7 @@ public class BluetoothLeService extends Service {
             "com.example.bluetooth.le.ACTION_DATA_AVAILABLE";
     public final static String EXTRA_DATA =
             "com.example.bluetooth.le.EXTRA_DATA";
-
+    private final static String TAG = BluetoothLeService.class.getSimpleName();
     private static final int STATE_DISCONNECTED = 0;
     private static final int STATE_CONNECTING = 1;
     private static final int STATE_CONNECTED = 2;
@@ -91,6 +89,11 @@ public class BluetoothLeService extends Service {
                     +characteristic.getUuid().toString()
                     +" -> "
                     +new String(characteristic.getValue()));
+            LogWriter.showLog(gatt.getDevice().getName()
+                    + " write "
+                    + characteristic.getUuid().toString()
+                    + " -> "
+                    + new String(characteristic.getValue()));
         }
 
         @Override
@@ -104,6 +107,7 @@ public class BluetoothLeService extends Service {
                 // Attempts to discover services after successful connection.
                 Log.i(TAG, "Attempting to start service discovery:" +
                         mBluetoothGatt.discoverServices());
+                LogWriter.showLog("Attempting to start service discovery:");
 
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 intentAction = ACTION_GATT_DISCONNECTED;
@@ -119,6 +123,7 @@ public class BluetoothLeService extends Service {
                 broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
             } else {
                 Log.w(TAG, "onServicesDiscovered received: " + status);
+                LogWriter.showLog("onServicesDiscovered received: " + status);
             }
         }
 
@@ -134,6 +139,11 @@ public class BluetoothLeService extends Service {
                                         +characteristic.getUuid().toString()
                                         +" -> "
                                         +characteristic.getValue());
+                LogWriter.showLog("onCharRead " + gatt.getDevice().getName()
+                        + " read "
+                        + characteristic.getUuid().toString()
+                        + " -> "
+                        + characteristic.getValue());
 
             }
         }
@@ -150,8 +160,14 @@ public class BluetoothLeService extends Service {
             Log.i("回调触发", characteristic.getValue().toString());
 
             Log.i("onCharacteristicChanged", "返回读出的值");
+            LogWriter.showLog("onCharacteristicChanged " + gatt.getDevice().getName()
+                    + " read "
+                    + characteristic.getUuid().toString()
+                    + " -> "
+                    + characteristic.getValue());
         }
     };
+    private LogWriter mLogWriter = LogWriter.getInstance();
 
     private void broadcastUpdate(final String action) {
         final Intent intent = new Intent(action);
@@ -171,6 +187,7 @@ public class BluetoothLeService extends Service {
             // intent.putExtra(EXTRA_DATA, new String(data) + "\n" + stringBuilder.toString());
             Log.d("Broadcast data:", stringBuilder.toString());
             Log.d("Broadcast date length", ""+data.length);
+            LogWriter.showLog("Broadcast data:" + stringBuilder.toString());
             intent.putExtra(EXTRA_DATA, data);
         }
         sendBroadcast(intent);
@@ -225,12 +242,14 @@ public class BluetoothLeService extends Service {
     public boolean connect(final String address) {
         if (mBluetoothAdapter == null || address == null) {
             Log.w(TAG, "BluetoothAdapter not initialized or unspecified address.");
+            LogWriter.showLog("BluetoothAdapter not initialized or unspecified address.");
             return false;
         }
         // Previously connected device.  Try to reconnect.
         if (mBluetoothDeviceAddress != null && address.equals(mBluetoothDeviceAddress)
                 && mBluetoothGatt != null) {
             Log.d(TAG, "Trying to use an existing mBluetoothGatt for connection.");
+            LogWriter.showLog("Trying to use an existing mBluetoothGatt for connection.");
             if (mBluetoothGatt.connect()) {
                 mConnectionState = STATE_CONNECTING;
                 return true;
@@ -242,6 +261,7 @@ public class BluetoothLeService extends Service {
         final BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
         if (device == null) {
             Log.w(TAG, "Device not found.  Unable to connect.");
+            LogWriter.showLog("Device not found.  Unable to connect.");
             return false;
         }
         // We want to directly connect to the device, so we are setting the autoConnect

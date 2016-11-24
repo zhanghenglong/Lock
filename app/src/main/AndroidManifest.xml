@@ -3,6 +3,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.anda.smartlock">
 
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_INTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
     <!-- 应用使用蓝牙的权限 -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <!-- 扫描蓝牙设备或者操作蓝牙设置 -->

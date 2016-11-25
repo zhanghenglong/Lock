@@ -54,8 +54,8 @@ public class HomeActivity extends AppCompatActivity{
     private static final int REQUEST_ENABLE_BT = 2;
     // Stops scanning after 5 seconds.
     private static final long SCAN_PERIOD = 2000;
-    private static final long CONN_PERIOD = 5000;
-    private static final long INMODE_PERIOD = 5000;
+    private static final long CONN_PERIOD = 10000;
+    private static final long INMODE_PERIOD = 10000;
     private static short seq = 1;
     private LogWriter mLogWriter = LogWriter.getInstance();
     private ViewHolder vh;
@@ -80,6 +80,7 @@ public class HomeActivity extends AppCompatActivity{
             System.out.println("执行连接服务");
             if (!mBluetoothLeService.initialize()) {
                 Log.e(TAG, "Unable to initialize Bluetooth");
+                LogWriter.showLog("Unable to initialize Bluetooth");
                 finish();
             }
             // Automatically connects to the device upon successful start-up initialization.
@@ -91,6 +92,19 @@ public class HomeActivity extends AppCompatActivity{
             mBluetoothLeService = null;
         }
     };
+    //Parameter:======================= Device OnCheckedChangeListener. =======================//
+    protected CompoundButton.OnCheckedChangeListener onCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
+        @Override
+        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+            if (!isChecked) {
+                mBluetoothLeService.disconnect();
+                findViewById(R.id.layout_del).setVisibility(View.INVISIBLE);
+                findViewById(R.id.layout_add).setVisibility(View.INVISIBLE);
+                buttonView.setText("未连接");
+                vh.sw_conn.setClickable(false);
+            }
+        }
+    };
     private BluetoothGattCharacteristic mNotifyCharacteristic;
     private boolean mWaitingAdd = false;
     private boolean mWaitingDel = false;
@@ -100,8 +114,13 @@ public class HomeActivity extends AppCompatActivity{
     public View.OnClickListener onClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
+            if (mConnected) {
+                Toast.makeText(HomeActivity.this, "已有设备连接，请先断开其他设备！", Toast.LENGTH_SHORT).show();
+                return;
+            }
             int position = v.getId();
             vh = (ViewHolder) v.getTag();
+            boolean isChecked = vh.sw_conn.isChecked();
             System.out.println("已经点击了选取item");
             final BluetoothDevice device = mLeDeviceListAdapter.getDevice(position);
             if (device == null) {
@@ -118,41 +137,13 @@ public class HomeActivity extends AppCompatActivity{
                     @Override
                     public void run() {
                         pDialog.dismissWithAnimation();
-                        if (mConnected == false)
+                        if (!mConnected)
                             Toast.makeText(HomeActivity.this, "无法连接选择的设备，请检查设备！", Toast.LENGTH_SHORT).show();
                     }
                 }, CONN_PERIOD);
 
             } else {
                 Log.d(TAG, "BluetoothLeService为空");
-            }
-        }
-    };
-    //Parameter:======================= Device OnCheckedChangeListener. =======================//
-    protected CompoundButton.OnCheckedChangeListener onCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
-        @Override
-        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-            if (isChecked == false) {
-                mBluetoothLeService.disconnect();
-                findViewById(R.id.layout_del).setVisibility(View.INVISIBLE);
-                findViewById(R.id.layout_add).setVisibility(View.INVISIBLE);
-                buttonView.setText("未连接");
-            } else {
-                if (mConnected == false) {
-                    Log.d(TAG, "已经选择要连接的设备" + mDeviceAddress);
-                    mBluetoothLeService.connect(mDeviceAddress);
-                    pDialog = showProcessDialog("连接智能锁中...");
-                    mHandler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            pDialog.dismissWithAnimation();
-                            if (mConnected == false)
-                                Toast.makeText(HomeActivity.this, "无法连接选择的设备，请检查设备！", Toast.LENGTH_SHORT).show();
-                        }
-                    }, CONN_PERIOD);
-                    buttonView.setText("未连接");
-                    buttonView.setChecked(false);
-                }
             }
         }
     };
@@ -175,13 +166,13 @@ public class HomeActivity extends AppCompatActivity{
                 LogWriter.showLog("服务discovered");
                 mBluetoothLeGattaService = mBluetoothLeService.getSupportedGattServices(UUID.fromString(BLEUUID.SERVICE));
                 if(mBluetoothLeGattaService == null) {
-                    Toast.makeText(HomeActivity.this, "无法识别服务，请确认连接的是否是智能锁设备", Toast.LENGTH_SHORT);
+                    Toast.makeText(HomeActivity.this, "无法识别服务，请确认连接的是否是智能锁设备", Toast.LENGTH_SHORT).show();
                     LogWriter.showLog("无法识别服务，请确认连接的是否是智能锁设备");
                 } else {
                     LogWriter.showLog("GattaService FFE0 is found.");
                     mNotifyCharacteristic = mBluetoothLeGattaService.getCharacteristic(UUID.fromString(BLEUUID.CHARACTER));
                     if (mNotifyCharacteristic == null) {
-                        Toast.makeText(HomeActivity.this, "无法获取FFE1的读写通知特性！", Toast.LENGTH_SHORT);
+                        Toast.makeText(HomeActivity.this, "无法获取FFE1的读写通知特性！", Toast.LENGTH_SHORT).show();
                         LogWriter.showLog("无法获取FFE1的读写通知特性！");
                     } else {
                         //set the readUnblockCharacteristic as true
@@ -201,7 +192,7 @@ public class HomeActivity extends AppCompatActivity{
         }
     };
     //Parameter:======================= Device switch list. =======================//
-    private List btnList = new ArrayList<Switch>();
+    private List btnList = new ArrayList<>();
     //Parameter:======================= Device scan callback. =======================//
     private BluetoothAdapter.LeScanCallback mLeScanCallback =
             new BluetoothAdapter.LeScanCallback() {
@@ -257,7 +248,7 @@ public class HomeActivity extends AppCompatActivity{
         findViewById(R.id.btn_scan).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mConnected == false) {
+                if (!mConnected) {
                     mLeDeviceListAdapter.clear();
                     scanLeDevice(true);
                 } else {
@@ -421,7 +412,7 @@ public class HomeActivity extends AppCompatActivity{
                             FingerPrintRepo fp_repo = new FingerPrintRepo(HomeActivity.this);
                             int id = Integer.valueOf(selected_id);
                             FingerPrint fingerPrint = fp_repo.getFingerPrintById(id);
-                            System.out.println("要删除的指纹地址是：" + fingerPrint.address.toString());
+                            System.out.println("要删除的指纹地址是：" + fingerPrint.address);
                             sendMsg2Lock(Lock.CmdId.sendDataToLock, fingerPrint.address, seq++);
                             sDialog.dismissWithAnimation();
                         }
@@ -444,7 +435,12 @@ public class HomeActivity extends AppCompatActivity{
                 public void run() {
                     pDialog.dismissWithAnimation();
                     mScanning = false;
-                    mBluetoothAdapter.stopLeScan(mLeScanCallback);
+                    try {
+                        mBluetoothAdapter.stopLeScan(mLeScanCallback);
+                    } catch (NullPointerException exception) {
+                        LogWriter.showLog("Can't stop scan. Unexpected NullPointerException");
+                    }
+
                 }
             }, SCAN_PERIOD);
             mScanning = true;
@@ -452,7 +448,11 @@ public class HomeActivity extends AppCompatActivity{
             pDialog = showProcessDialog("扫描设备中，请稍后...");
         } else {
             mScanning = false;
-            mBluetoothAdapter.stopLeScan(mLeScanCallback);
+            try {
+                mBluetoothAdapter.stopLeScan(mLeScanCallback);
+            } catch (NullPointerException exception) {
+                LogWriter.showLog("Can't stop scan. Unexpected NullPointerException");
+            }
         }
         //
     }
@@ -469,10 +469,11 @@ public class HomeActivity extends AppCompatActivity{
             public void run() {
                 //mConnectionState.setText(resourceId);
                 pDialog.dismissWithAnimation();
-                if(mConnected == true) {
+                if (mConnected) {
                     findViewById(R.id.layout_del).setVisibility(View.VISIBLE);
                     findViewById(R.id.layout_add).setVisibility(View.VISIBLE);
                     vh.sw_conn.setText("已连接");
+                    vh.sw_conn.setClickable(true);
                     vh.sw_conn.setChecked(true);
                 } else {
                     Toast.makeText(HomeActivity.this, "设备连接失败，请检查智能锁设备", Toast.LENGTH_SHORT).show();
@@ -534,7 +535,7 @@ public class HomeActivity extends AppCompatActivity{
                                 .setConfirmText("好的")
                                 .setConfirmClickListener(null).show();
                     } else {
-                        Toast.makeText(this, "设备删除指纹失败！", Toast.LENGTH_SHORT);
+                        Toast.makeText(this, "设备删除指纹失败！", Toast.LENGTH_SHORT).show();
                     }
                 }
                 break;
@@ -564,8 +565,6 @@ public class HomeActivity extends AppCompatActivity{
         mNotifyCharacteristic.setValue(respRaw);
         mNotifyCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
         mBluetoothLeService.writeCharacteristic(mNotifyCharacteristic);
-      //  Toast.makeText(getApplicationContext(), "写入成功！", Toast.LENGTH_SHORT).show();
-        seq++;
     }
     /**==============================================================================**
      * 函数名：showProcessDialog
@@ -610,7 +609,7 @@ public class HomeActivity extends AppCompatActivity{
 
         public LeDeviceListAdapter() {
             super();
-            mLeDevices = new ArrayList<BluetoothDevice>();
+            mLeDevices = new ArrayList<>();
             mInflator = HomeActivity.this.getLayoutInflater();
         }
 
@@ -653,7 +652,6 @@ public class HomeActivity extends AppCompatActivity{
                 viewHolder.deviceAddress = (TextView) view.findViewById(R.id.txt_item_mac);
                 viewHolder.deviceName = (TextView) view.findViewById(R.id.txt_item_name);
                 viewHolder.sw_conn = (Switch) view.findViewById(R.id.sw_conn);
-                btnList.add(viewHolder.sw_conn);
                 view.setTag(viewHolder);
             } else {
                 viewHolder = (ViewHolder) view.getTag();
@@ -666,6 +664,8 @@ public class HomeActivity extends AppCompatActivity{
                 viewHolder.deviceName.setText(R.string.unknown_device);
             viewHolder.deviceAddress.setText(device.getAddress());
             viewHolder.sw_conn.setText("未连接");
+            viewHolder.sw_conn.setClickable(false);
+
             viewHolder.sw_conn.setOnCheckedChangeListener(onCheckedChangeListener);
             view.setClickable(true);
             view.setId(i);

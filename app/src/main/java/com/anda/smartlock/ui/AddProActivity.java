@@ -165,7 +165,7 @@ public class AddProActivity extends AppCompatActivity {
             @Override
             public void onCancel() {
                 if (state == FP_State.RECIEVED_DATA) {
-                    Toast.makeText(getApplicationContext(), "已收到指纹数据，请输入指纹主人的名字！", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "已收到指纹数据，请点击FINISH保存！", Toast.LENGTH_SHORT).show();
                 } else {
                     Intent tent = new Intent(AddProActivity.this, HomeActivity.class);
                     setResult(RESULT_CANCELED, tent);
@@ -321,40 +321,49 @@ public class AddProActivity extends AppCompatActivity {
                         updateTxtState(R.id.txt_fir, "第一次录指纹成功，请点击Continue继续第二次录指纹");
                         steps.get(0).setSubLabel("智能锁第一次录取指纹成功！");
                         steps.get(0).setPositiveButtonEnable(true);
-                    } else {
+                    }
+                    if (packetHead.errorCode == 3) {
                         state = FP_State.IDLE;
-                        Toast.makeText(AddProActivity.this, "指纹录取失败，请点击取消退出", Toast.LENGTH_SHORT);
+                        Toast.makeText(AddProActivity.this, "第一次指纹录取超时，退出录指纹流程！", Toast.LENGTH_SHORT).show();
                         System.out.println("智能锁录取指纹失败！失败代码为：" + packetHead.errorCode);
+                        Intent tent = new Intent(AddProActivity.this, HomeActivity.class);
+                        setResult(RESULT_CANCELED, tent);
+                        AddProActivity.this.finish();
                     }
                 }
                 break;
             case FP_State.SECSTEP:
                 if(packetHead.cmdId == 0x2001) {
-                    if (packetHead.errorCode == 0) {
-                        state = FP_State.RECIEVED_DATA;
-                        System.out.println("智能锁第二次录取指纹成功！录指纹成功！");
-                        updateTxtState(R.id.txt_sec, "第二次录指纹成功，等待接受指纹数据...");
-                        /// 这里将来考虑提示两次成功后启动timer定时器，如果在超时还没有收到指纹地址的话就给设备和微信提示
-                    } else {
+                    if (packetHead.errorCode == 3) {
                         state = FP_State.IDLE;
-                        Toast.makeText(AddProActivity.this, "指纹录取失败，请点击取消退出", Toast.LENGTH_SHORT);
+                        Toast.makeText(AddProActivity.this, "第二次指纹录取超时，退出录指纹流程！", Toast.LENGTH_SHORT).show();
                         System.out.println("智能锁录取指纹失败！失败代码为：" + packetHead.errorCode);
+                        Intent tent = new Intent(AddProActivity.this, HomeActivity.class);
+                        setResult(RESULT_CANCELED, tent);
+                        AddProActivity.this.finish();
+                    }
+                    if (packetHead.errorCode == 4) {
+                        state = FP_State.IDLE;
+                        Toast.makeText(AddProActivity.this, "两次指纹不匹配，退出录指纹流程！", Toast.LENGTH_SHORT).show();
+                        System.out.println("智能锁录取指纹失败！失败代码为：" + packetHead.errorCode);
+                        Intent tent = new Intent(AddProActivity.this, HomeActivity.class);
+                        setResult(RESULT_CANCELED, tent);
+                        AddProActivity.this.finish();
                     }
                 }
-                break;
-            case FP_State.RECIEVED_DATA:
-                if(packetHead.cmdId == 0x01) {
-                    System.out.println("收到智能锁成功录取的指纹:" + packetBody+"长度为："+packetBody.length());
+                if (packetHead.cmdId == 0x01) {
+                    state = FP_State.RECIEVED_DATA;
+                    System.out.println("收到智能锁成功录取的指纹:" + packetBody + "长度为：" + packetBody.length());
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             TextView txt_sec = (TextView) findViewById(R.id.txt_sec);
-                            txt_sec.setText("收到指纹数据，请给指纹命名并点击Finish存储指纹数据");
+                            txt_sec.setText("指纹录取成功，请给收到的指纹命名并点击Finish存储指纹数据！");
                             EditText txt_name = (EditText) findViewById(R.id.txt_name);
                             txt_name.setVisibility(View.VISIBLE);
                         }
                     });
-                    sendMsg2Lock(Lock.CmdId.sendDataToServACK , packetBody, packetHead.seq);
+                    sendMsg2Lock(Lock.CmdId.sendDataToServACK, packetBody, packetHead.seq);
                     fingerPrint.address = packetBody;
                     steps.get(1).setPositiveButtonEnable(true);
                 }

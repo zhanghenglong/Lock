@@ -19,6 +19,7 @@ import java.util.HashMap;
 
 public class DelProActivity extends ListActivity {
     public static final String EXTRAS_FingerPrint_ID = "ID";
+    public static final String EXTRAS_FingerPrint_NAME = "NAME";
     private static final String TAG = DelProActivity.class.getSimpleName();
     private ArrayList<HashMap<String, String>> mList;
     private ArrayList<FPBean> fpBeanArrayList;
@@ -43,8 +44,10 @@ public class DelProActivity extends ListActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 String selected_id = fpBeanArrayList.get(position).getId();
+                String selected_name = fpBeanArrayList.get(position).getName();
                 Intent returnIntent = new Intent();
                 returnIntent.putExtra(EXTRAS_FingerPrint_ID, selected_id);
+                returnIntent.putExtra(EXTRAS_FingerPrint_NAME, selected_name);
                 setResult(RESULT_OK, returnIntent);
                 DelProActivity.this.finish();
             }

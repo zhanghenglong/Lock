@@ -61,6 +61,7 @@ public class HomeActivity extends AppCompatActivity{
     private ViewHolder vh;
     private SweetAlertDialog pDialog;
     private String selected_id;
+    private String selected_name;
     private int state = FP_State.IDLE;
     private LeDeviceListAdapter mLeDeviceListAdapter;
     private BluetoothAdapter mBluetoothAdapter;
@@ -153,7 +154,7 @@ public class HomeActivity extends AppCompatActivity{
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
             if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(action)) {
-                mConnected = true;
+                //  mConnected = true;
                 LogWriter.showLog("BluetoothLeService.ACTION_GATT_CONNECTED");
              //   updateConnectionState(R.string.connected);
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
@@ -176,6 +177,7 @@ public class HomeActivity extends AppCompatActivity{
                         LogWriter.showLog("无法获取FFE1的读写通知特性！");
                     } else {
                         //set the readUnblockCharacteristic as true
+                        mConnected = true;
                         LogWriter.showLog("FFE1的读写通知特性Found！");
                         mBluetoothLeService.setCharacteristicNotification(mNotifyCharacteristic, true);
                         updateConnectionState(R.string.connected);
@@ -392,10 +394,11 @@ public class HomeActivity extends AppCompatActivity{
         if(requestCode == 1 && resultCode == Activity.RESULT_OK){
             state = FP_State.DEL;
             selected_id = data.getStringExtra(DelProActivity.EXTRAS_FingerPrint_ID);
+            selected_name = data.getStringExtra(DelProActivity.EXTRAS_FingerPrint_NAME);
             System.out.println(selected_id + "已被选择要删除！");
             new SweetAlertDialog(this, SweetAlertDialog.WARNING_TYPE)
                     .setTitleText("确定要删除吗?")
-                    .setContentText("将要从设备和数据库中删除指纹")
+                    .setContentText(selected_name + "的指纹将从设备和数据库中删除！")
                     .setConfirmText("删除")
                     .setCancelText("返回")
                     .setCancelClickListener(new SweetAlertDialog.OnSweetClickListener() {
@@ -531,7 +534,7 @@ public class HomeActivity extends AppCompatActivity{
                         fp_repo.delete(Integer.valueOf(selected_id));
                         new SweetAlertDialog(this, SweetAlertDialog.SUCCESS_TYPE)
                                 .setTitleText("已删除!")
-                                .setContentText("指纹已从设备和数据库中删除!")
+                                .setContentText(selected_name + "的指纹从设备和数据库中删除!")
                                 .setConfirmText("好的")
                                 .setConfirmClickListener(null).show();
                     } else {

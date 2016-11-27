@@ -39,7 +39,6 @@ import com.anda.smartlock.tools.LogWriter;
 import com.iiseeuu.rootview.RootLayout;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 import cn.pedant.SweetAlert.SweetAlertDialog;
@@ -193,8 +192,6 @@ public class HomeActivity extends AppCompatActivity{
             }
         }
     };
-    //Parameter:======================= Device switch list. =======================//
-    private List btnList = new ArrayList<>();
     //Parameter:======================= Device scan callback. =======================//
     private BluetoothAdapter.LeScanCallback mLeScanCallback =
             new BluetoothAdapter.LeScanCallback() {
@@ -440,6 +437,7 @@ public class HomeActivity extends AppCompatActivity{
                     mScanning = false;
                     try {
                         mBluetoothAdapter.stopLeScan(mLeScanCallback);
+                        Toast.makeText(HomeActivity.this, "抱歉，附近没有找到设备！", Toast.LENGTH_SHORT).show();
                     } catch (NullPointerException exception) {
                         LogWriter.showLog("Can't stop scan. Unexpected NullPointerException");
                     }

@@ -249,6 +249,7 @@ public class HomeActivity extends AppCompatActivity{
             public void onClick(View v) {
                 if (!mConnected) {
                     mLeDeviceListAdapter.clear();
+                    mLeDeviceListAdapter.notifyDataSetChanged();
                     scanLeDevice(true);
                 } else {
                     Toast.makeText(HomeActivity.this, "已连接设备，请先断开设备后再执行扫描！", Toast.LENGTH_SHORT).show();
@@ -414,6 +415,7 @@ public class HomeActivity extends AppCompatActivity{
                             FingerPrint fingerPrint = fp_repo.getFingerPrintById(id);
                             System.out.println("要删除的指纹地址是：" + fingerPrint.address);
                             sendMsg2Lock(Lock.CmdId.sendDataToLock, fingerPrint.address, seq++);
+                            Toast.makeText(HomeActivity.this, "已将删除命令发往设备，等待设备返回！", Toast.LENGTH_SHORT).show();
                             sDialog.dismissWithAnimation();
                         }
                     }).show();
@@ -437,11 +439,11 @@ public class HomeActivity extends AppCompatActivity{
                     mScanning = false;
                     try {
                         mBluetoothAdapter.stopLeScan(mLeScanCallback);
-                        Toast.makeText(HomeActivity.this, "抱歉，附近没有找到设备！", Toast.LENGTH_SHORT).show();
                     } catch (NullPointerException exception) {
                         LogWriter.showLog("Can't stop scan. Unexpected NullPointerException");
                     }
-
+                    if (mLeDeviceListAdapter.getCount() == 0)
+                        Toast.makeText(HomeActivity.this, "抱歉，附近没有找到设备！", Toast.LENGTH_SHORT).show();
                 }
             }, SCAN_PERIOD);
             mScanning = true;
@@ -527,7 +529,7 @@ public class HomeActivity extends AppCompatActivity{
                 if (packetHead.cmdId == 0x1002) {
                     if (packetHead.errorCode == 0) {
                         state = FP_State.IDLE;
-                        System.out.println("删除指纹成功");
+                        System.out.println("收到设备返回的删除指纹成功");
                         FingerPrintRepo fp_repo = new FingerPrintRepo(this);
                         fp_repo.delete(Integer.valueOf(selected_id));
                         new SweetAlertDialog(this, SweetAlertDialog.SUCCESS_TYPE)

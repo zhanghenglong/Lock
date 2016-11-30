@@ -77,7 +77,6 @@ public class DelProActivity extends ListActivity {
 
     @Override
     public void onBackPressed() {
-        super.onBackPressed();
         Intent returnIntent = new Intent();
         setResult(RESULT_CANCELED, returnIntent);
         DelProActivity.this.finish();

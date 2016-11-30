@@ -23,21 +23,20 @@ import android.support.v4.app.FragmentManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
 import java.util.List;
 
 public class SteppersView extends LinearLayout {
 
+    static int fID = 190980;
     private RecyclerView recyclerView;
     private SteppersAdapter steppersAdapter;
-
     private Config config;
     private List<SteppersItem> items;
+    private boolean possitiveButtonEnable = true;
 
     public SteppersView(Context context) {
         super(context);
@@ -57,6 +56,16 @@ public class SteppersView extends LinearLayout {
         super(context, attrs, defStyleAttr, defStyleRes);
     }
 
+    /*public void setPositiveButtonEnable(int position, boolean enable) {
+        this.items.get(position).setPositiveButtonEnable(enable);
+
+    }*/
+
+    protected static int findUnusedId(View view) {
+        while (view.getRootView().findViewById(++fID) != null) ;
+        return fID;
+    }
+
     public SteppersView setConfig(Config config) {
         this.config = config;
         return this;
@@ -66,11 +75,6 @@ public class SteppersView extends LinearLayout {
         this.items = items;
         return this;
     }
-
-    /*public void setPositiveButtonEnable(int position, boolean enable) {
-        this.items.get(position).setPositiveButtonEnable(enable);
-
-    }*/
 
     public void build() {
         if(config != null) {
@@ -99,10 +103,8 @@ public class SteppersView extends LinearLayout {
         }
     }
 
-    private boolean possitiveButtonEnable = true;
-
     public static class Config {
-
+        private OnContinueAction onContinueAction;
         private OnFinishAction onFinishAction;
         private OnCancelAction onCancelAction;
         private FragmentManager fragmentManager;
@@ -111,8 +113,12 @@ public class SteppersView extends LinearLayout {
 
         }
 
-        public Config setOnFinishAction(OnFinishAction onFinishAction) {
-            this.onFinishAction = onFinishAction;
+        public OnContinueAction getOnContinueAction() {
+            return onContinueAction;
+        }
+
+        public Config setOnContinueAction(OnContinueAction onContinueAction) {
+            this.onContinueAction = onContinueAction;
             return this;
         }
 
@@ -120,8 +126,8 @@ public class SteppersView extends LinearLayout {
             return onFinishAction;
         }
 
-        public Config setOnCancelAction(OnCancelAction onCancelAction) {
-            this.onCancelAction = onCancelAction;
+        public Config setOnFinishAction(OnFinishAction onFinishAction) {
+            this.onFinishAction = onFinishAction;
             return this;
         }
 
@@ -129,19 +135,18 @@ public class SteppersView extends LinearLayout {
             return onCancelAction;
         }
 
-        public void setFragmentManager(FragmentManager fragmentManager) {
-            this.fragmentManager = fragmentManager;
+        public Config setOnCancelAction(OnCancelAction onCancelAction) {
+            this.onCancelAction = onCancelAction;
+            return this;
         }
 
         public FragmentManager getFragmentManager() {
             return fragmentManager;
         }
-    }
 
-    static int fID = 190980;
-    protected static int findUnusedId(View view) {
-        while( view.getRootView().findViewById(++fID) != null );
-        return fID;
+        public void setFragmentManager(FragmentManager fragmentManager) {
+            this.fragmentManager = fragmentManager;
+        }
     }
 
 }

@@ -51,6 +51,7 @@ public class SteppersAdapter extends RecyclerView.Adapter<SteppersViewHolder> {
     private int removeStep = -1;
     private int beforeStep = -1;
     private int currentStep = 0;
+    private int fID = 87352142;
 
     public SteppersAdapter(SteppersView steppersView, SteppersView.Config config, List<SteppersItem> items) {
         this.steppersView = steppersView;
@@ -58,6 +59,14 @@ public class SteppersAdapter extends RecyclerView.Adapter<SteppersViewHolder> {
         this.config = config;
         this.items = items;
         this.fragmentManager = config.getFragmentManager();
+    }
+
+    private static String frameLayoutName() {
+        return "android:steppers:framelayout";
+    }
+
+    private static String makeFragmentName(int viewId, long id) {
+        return "android:steppers:" + viewId + ":" + id;
     }
 
     @Override
@@ -118,7 +127,10 @@ public class SteppersAdapter extends RecyclerView.Adapter<SteppersViewHolder> {
             @Override
             public void onClick(View v) {
                 if(position == getItemCount() - 1) config.getOnFinishAction().onFinish();
-                else nextStep();
+                else {
+                    config.getOnContinueAction().onContinue();
+                    nextStep();
+                }
             }
         });
 
@@ -211,18 +223,8 @@ public class SteppersAdapter extends RecyclerView.Adapter<SteppersViewHolder> {
         return items.size();
     }
 
-    private int fID = 87352142;
-
     public int findUnusedId(View view) {
         while( view.findViewById(++fID) != null );
         return fID;
-    }
-
-    private static String frameLayoutName() {
-        return "android:steppers:framelayout";
-    }
-
-    private static String makeFragmentName(int viewId, long id) {
-        return "android:steppers:" + viewId + ":" + id;
     }
 }

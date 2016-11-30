@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 import me.drozdzynski.library.steppers.OnCancelAction;
+import me.drozdzynski.library.steppers.OnContinueAction;
 import me.drozdzynski.library.steppers.OnFinishAction;
 import me.drozdzynski.library.steppers.SteppersItem;
 import me.drozdzynski.library.steppers.SteppersView;
@@ -138,6 +139,13 @@ public class AddProActivity extends AppCompatActivity {
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
 
         SteppersView.Config steppersViewConfig = new SteppersView.Config();
+        steppersViewConfig.setOnContinueAction(new OnContinueAction() {
+            @Override
+            public void onContinue() {
+                sendMsg2Lock(Lock.CmdId.pushToLock, null, (short) 0, (short) 0);
+                state = FP_State.SECSTEP;
+            }
+        });
         steppersViewConfig.setOnFinishAction(new OnFinishAction() {
             @Override
             public void onFinish() {
@@ -167,6 +175,8 @@ public class AddProActivity extends AppCompatActivity {
                 if (state == FP_State.RECIEVED_DATA) {
                     Toast.makeText(getApplicationContext(), "已收到指纹数据，请点击FINISH保存！", Toast.LENGTH_SHORT).show();
                 } else {
+                    sendMsg2Lock(Lock.CmdId.pushToLock, null, (short) 0, (short) 7);
+                    Toast.makeText(AddProActivity.this, "退出录指纹模式！", Toast.LENGTH_SHORT).show();
                     Intent tent = new Intent(AddProActivity.this, HomeActivity.class);
                     setResult(RESULT_CANCELED, tent);
                     AddProActivity.this.finish();
@@ -316,11 +326,12 @@ public class AddProActivity extends AppCompatActivity {
                 if(packetHead.cmdId == 0x2001) {
                     if (packetHead.errorCode == 0) {
                         /// 这里将来考虑提示两次成功后启动timer定时器，如果在超时还没有收到指纹地址的话就给设备和微信提示
-                        state = FP_State.SECSTEP;
+                        // state = FP_State.SECSTEP;
                         System.out.println("智能锁第一次录取指纹成功！请再次按下指纹！");
                         updateTxtState(R.id.txt_fir, "第一次录指纹成功，请点击Continue继续第二次录指纹");
                         steps.get(0).setSubLabel("智能锁第一次录取指纹成功！");
                         steps.get(0).setPositiveButtonEnable(true);
+
                     }
                     if (packetHead.errorCode == 3) {
                         state = FP_State.IDLE;
@@ -363,7 +374,7 @@ public class AddProActivity extends AppCompatActivity {
                             txt_name.setVisibility(View.VISIBLE);
                         }
                     });
-                    sendMsg2Lock(Lock.CmdId.sendDataToServACK, packetBody, packetHead.seq);
+                    sendMsg2Lock(Lock.CmdId.sendDataToServACK, packetBody, packetHead.seq, (short) 0);
                     fingerPrint.address = packetBody;
                     steps.get(1).setPositiveButtonEnable(true);
                 }
@@ -378,12 +389,12 @@ public class AddProActivity extends AppCompatActivity {
      * 输入参数：null
      * 返回值：void
      **==============================================================================**/
-    private void sendMsg2Lock(Lock.CmdId cmdId, String respText, short seq) {
+    private void sendMsg2Lock(Lock.CmdId cmdId, String respText, short seq, short errorCode) {
         if (mBluetoothLeGattaService == null || mNotifyCharacteristic == null) {
             Log.d(TAG, "BluetoothLeGattaService or NotifyCharacteristic can not get");
             mBluetoothLeService.connect(mDeviceAddress);
         }
-        Lock lockResp = Lock.build(cmdId , respText, seq);
+        Lock lockResp = Lock.build(cmdId, respText, seq, errorCode);
         // 序列化
         byte[] respRaw = lockResp.toBytes();
         System.out.println("对象序列化之后的长度为：" + respRaw.length);

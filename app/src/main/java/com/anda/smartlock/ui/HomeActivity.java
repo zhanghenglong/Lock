@@ -35,7 +35,6 @@ import com.anda.smartlock.consts.FP_State;
 import com.anda.smartlock.data.FingerPrint;
 import com.anda.smartlock.data.FingerPrintRepo;
 import com.anda.smartlock.protocol.Lock;
-import com.anda.smartlock.tools.LogWriter;
 import com.iiseeuu.rootview.RootLayout;
 
 import java.util.ArrayList;
@@ -57,7 +56,6 @@ public class HomeActivity extends AppCompatActivity{
     private static final long INMODE_PERIOD = 3000;
     private static final long WAITING_DEL_PERIOD = 10000;
     private static short seq = 1;
-    private LogWriter mLogWriter = LogWriter.getInstance();
     private ViewHolder vh;
     private SweetAlertDialog pDialog;
     private String selected_id;
@@ -81,7 +79,6 @@ public class HomeActivity extends AppCompatActivity{
             System.out.println("执行连接服务");
             if (!mBluetoothLeService.initialize()) {
                 Log.e(TAG, "Unable to initialize Bluetooth");
-                LogWriter.showLog("Unable to initialize Bluetooth");
                 finish();
             }
             // Automatically connects to the device upon successful start-up initialization.
@@ -155,30 +152,25 @@ public class HomeActivity extends AppCompatActivity{
             final String action = intent.getAction();
             if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(action)) {
                 //  mConnected = true;
-                LogWriter.showLog("BluetoothLeService.ACTION_GATT_CONNECTED");
              //   updateConnectionState(R.string.connected);
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 mConnected = false;
             //    updateConnectionState(R.string.disconnected);
-                LogWriter.showLog("BluetoothLeService.ACTION_GATT_DISCONNECTED");
             }
             else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 // Show all the supported services and characteristics on the user interface.
-                LogWriter.showLog("服务discovered");
                 mBluetoothLeGattaService = mBluetoothLeService.getSupportedGattServices(UUID.fromString(BLEUUID.SERVICE));
                 if(mBluetoothLeGattaService == null) {
                     Toast.makeText(HomeActivity.this, "无法识别服务，请确认连接的是否是智能锁设备", Toast.LENGTH_SHORT).show();
-                    LogWriter.showLog("无法识别服务，请确认连接的是否是智能锁设备");
+                    // LogWriter.showLog("无法识别服务，请确认连接的是否是智能锁设备");
                 } else {
-                    LogWriter.showLog("GattaService FFE0 is found.");
                     mNotifyCharacteristic = mBluetoothLeGattaService.getCharacteristic(UUID.fromString(BLEUUID.CHARACTER));
                     if (mNotifyCharacteristic == null) {
                         Toast.makeText(HomeActivity.this, "无法获取FFE1的读写通知特性！", Toast.LENGTH_SHORT).show();
-                        LogWriter.showLog("无法获取FFE1的读写通知特性！");
+                        //   LogWriter.showLog("无法获取FFE1的读写通知特性！");
                     } else {
                         //set the readUnblockCharacteristic as true
                         mConnected = true;
-                        LogWriter.showLog("FFE1的读写通知特性Found！");
                         mBluetoothLeService.setCharacteristicNotification(mNotifyCharacteristic, true);
                         updateConnectionState(R.string.connected);
                     }
@@ -469,7 +461,7 @@ public class HomeActivity extends AppCompatActivity{
                     try {
                         mBluetoothAdapter.stopLeScan(mLeScanCallback);
                     } catch (NullPointerException exception) {
-                        LogWriter.showLog("Can't stop scan. Unexpected NullPointerException");
+                        //    LogWriter.showLog("Can't stop scan. Unexpected NullPointerException");
                     }
                     if (mLeDeviceListAdapter.getCount() == 0)
                         Toast.makeText(HomeActivity.this, "抱歉，附近没有找到设备！", Toast.LENGTH_SHORT).show();
@@ -483,7 +475,7 @@ public class HomeActivity extends AppCompatActivity{
             try {
                 mBluetoothAdapter.stopLeScan(mLeScanCallback);
             } catch (NullPointerException exception) {
-                LogWriter.showLog("Can't stop scan. Unexpected NullPointerException");
+                //   LogWriter.showLog("Can't stop scan. Unexpected NullPointerException");
             }
         }
         //
